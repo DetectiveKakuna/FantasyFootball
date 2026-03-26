@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 *.swp
 client/node_modules
 *.db
+
+# Appsettings
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Local.json

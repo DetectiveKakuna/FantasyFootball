@@ -16,4 +16,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FantasyFootball.Core\FantasyFootball.Core.csproj" />
+    <ProjectReference Include="..\FantasyFootball.Infrastructure\FantasyFootball.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
