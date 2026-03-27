@@ -2,4 +2,5 @@
   <Project Path="FantasyFootball.Api/FantasyFootball.Api.csproj" />
   <Project Path="FantasyFootball.Core/FantasyFootball.Core.csproj" />
   <Project Path="FantasyFootball.Infrastructure/FantasyFootball.Infrastructure.csproj" />
+  <Project Path="FantasyFootball.Tests/FantasyFootball.Tests.csproj" />
 </Solution>

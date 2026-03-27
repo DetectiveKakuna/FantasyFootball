@@ -1,12 +1,27 @@
+using FantasyFootball.Core.Interfaces;
+using FantasyFootball.Infrastructure.FantasyPros;
+using FantasyFootball.Infrastructure.Sleeper;
+using Microsoft.Playwright;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddHttpClient<ISleeperClient, SleeperClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Sleeper:BaseUrl"]!);
+});
+
+builder.Services.AddSingleton<IPlaywright>(_ =>
+    Playwright.CreateAsync().GetAwaiter().GetResult());
+builder.Services.AddSingleton<IBrowser>(sp =>
+    sp.GetRequiredService<IPlaywright>().Chromium
+        .LaunchAsync(new BrowserTypeLaunchOptions { Headless = true })
+        .GetAwaiter().GetResult());
+builder.Services.AddSingleton<IFantasyProsAccuracyScraper, FantasyProsAccuracyScraper>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -14,28 +29,4 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
