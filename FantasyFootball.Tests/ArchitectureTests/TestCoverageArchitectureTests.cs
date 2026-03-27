@@ -11,8 +11,19 @@ public class TestCoverageArchitectureTests
     [TestMethod]
     public void AllClientMethods_MustHaveAtLeastOneTest()
     {
-        var clientTypes = typeof(SleeperClient).Assembly.GetTypes()
-            .Where(t => t.Name.EndsWith("Client") && t.IsClass && !t.IsAbstract && t.IsPublic);
+        AssertAllPublicMethodsHaveTests("Client");
+    }
+
+    [TestMethod]
+    public void AllScraperMethods_MustHaveAtLeastOneTest()
+    {
+        AssertAllPublicMethodsHaveTests("Scraper");
+    }
+
+    private static void AssertAllPublicMethodsHaveTests(string suffix)
+    {
+        var types = typeof(SleeperClient).Assembly.GetTypes()
+            .Where(t => t.Name.EndsWith(suffix) && t.IsClass && !t.IsAbstract && t.IsPublic);
 
         var testMethodNames = typeof(TestCoverageArchitectureTests).Assembly.GetTypes()
             .SelectMany(t => t.GetMethods())
@@ -21,15 +32,15 @@ public class TestCoverageArchitectureTests
             .Select(m => m.Name)
             .ToHashSet();
 
-        foreach (var clientType in clientTypes)
+        foreach (var type in types)
         {
             // Prefer using the interface so we test the contract, not internal helpers
-            var clientInterface = clientType.GetInterfaces()
-                .FirstOrDefault(i => i.Name.StartsWith("I") && i.Name.EndsWith("Client"));
+            var contractInterface = type.GetInterfaces()
+                .FirstOrDefault(i => i.Name.StartsWith("I") && i.Name.EndsWith(suffix));
 
-            var methods = clientInterface != null
-                ? clientInterface.GetMethods()
-                : clientType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            var methods = contractInterface != null
+                ? contractInterface.GetMethods()
+                : type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
             foreach (var method in methods)
             {
@@ -38,7 +49,7 @@ public class TestCoverageArchitectureTests
                     name.StartsWith(method.Name + "_"));
 
                 Assert.IsTrue(hasTest,
-                    $"No test found for {clientType.Name}.{method.Name} — " +
+                    $"No test found for {type.Name}.{method.Name} — " +
                     $"add a test method whose name contains '{method.Name}'.");
             }
         }
