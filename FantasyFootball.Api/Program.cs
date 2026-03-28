@@ -18,7 +18,11 @@ builder.Services.AddSingleton<IBrowser>(sp =>
     sp.GetRequiredService<IPlaywright>().Chromium
         .LaunchAsync(new BrowserTypeLaunchOptions { Headless = true })
         .GetAwaiter().GetResult());
-builder.Services.AddSingleton<IFantasyProsAccuracyScraper, FantasyProsAccuracyScraper>();
+var fantasyProsBaseUrl = builder.Configuration["FantasyPros:BaseUrl"]!;
+builder.Services.AddSingleton<IFantasyProsAccuracyScraper>(sp =>
+    new FantasyProsAccuracyScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
+builder.Services.AddSingleton<IFantasyProsExpertDirectoryScraper>(sp =>
+    new FantasyProsExpertDirectoryScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
 
 var app = builder.Build();
 

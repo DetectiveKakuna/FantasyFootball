@@ -10,8 +10,8 @@ internal static class ArchitectureFixture
         .Build();
 
     private static System.Reflection.Assembly[] LoadProductionAssemblies() =>
-        [.. AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a =>
-                a.GetName().Name?.StartsWith("FantasyFootball") == true &&
-                a.GetName().Name?.Contains("Tests") == false)];
+    [
+        typeof(Core.Interfaces.IFantasyProsAccuracyScraper).Assembly,
+        typeof(Infrastructure.FantasyPros.FantasyProsAccuracyScraper).Assembly,
+    ];
 }

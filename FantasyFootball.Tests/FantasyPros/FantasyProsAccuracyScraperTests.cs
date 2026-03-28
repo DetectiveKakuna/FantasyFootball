@@ -34,7 +34,7 @@ public class FantasyProsAccuracyScraperTests
             .Setup(p => p.CloseAsync(It.IsAny<PageCloseOptions>()))
             .Returns(Task.CompletedTask);
 
-        _scraper = new FantasyProsAccuracyScraper(_mockBrowser.Object);
+        _scraper = new FantasyProsAccuracyScraper(_mockBrowser.Object, "https://fake-base.test");
     }
 
     #region ScrapeAsync
@@ -43,16 +43,14 @@ public class FantasyProsAccuracyScraperTests
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_ReturnsExperts_WithValidData()
     {
-        var row = CreateMockRow("1", "Pat Fitzmaurice - FantasyPros", "5", "3", "7", "2", "10", "8", "12");
+        var row = CreateMockRow("1", "Alpha Bravo - SiteAlpha", "5", "3", "7", "2", "10", "8", "12");
         SetupTableRows(row);
 
         var result = await _scraper.ScrapeAsync(2025);
 
         Assert.AreEqual(1, result.Count);
         var expert = result[0];
-        Assert.AreEqual("Pat Fitzmaurice", expert.Name);
-        Assert.AreEqual("FantasyPros", expert.Site);
-        Assert.AreEqual("pat-fitzmaurice", expert.Slug);
+        Assert.AreEqual("Alpha Bravo", expert.Name);
         Assert.AreEqual(1, expert.OverallRank);
         Assert.AreEqual(5, expert.AccuracyRankQb);
         Assert.AreEqual(3, expert.AccuracyRankRb);
@@ -61,22 +59,20 @@ public class FantasyProsAccuracyScraperTests
         Assert.AreEqual(10, expert.AccuracyRankK);
         Assert.AreEqual(8, expert.AccuracyRankDst);
         Assert.AreEqual(12, expert.AccuracyRankIdp);
-        Assert.AreEqual(2025, expert.AccuracyYear);
     }
 
     [TestMethod]
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_ReturnsNullOverallRank_WhenRankIsDash()
     {
-        var row = CreateMockRow("-", "Jake Ciely - The Athletic", "1", "2", "3", "4", "5", "6", "7");
+        var row = CreateMockRow("-", "Charlie Delta - SiteBravo", "1", "2", "3", "4", "5", "6", "7");
         SetupTableRows(row);
 
         var result = await _scraper.ScrapeAsync(2025);
 
         Assert.AreEqual(1, result.Count);
         Assert.IsNull(result[0].OverallRank);
-        Assert.AreEqual("Jake Ciely", result[0].Name);
-        Assert.AreEqual("The Athletic", result[0].Site);
+        Assert.AreEqual("Charlie Delta", result[0].Name);
     }
 
     [DataTestMethod]
@@ -86,7 +82,7 @@ public class FantasyProsAccuracyScraperTests
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_ReturnsNullPositionRank_WhenDataSortIsInvalid(string? dataSortValue)
     {
-        var row = CreateMockRow("1", "Test Expert - TestSite", dataSortValue, "2", "3", "4", "5", "6", "7");
+        var row = CreateMockRow("1", "Echo Foxtrot - SiteCharlie", dataSortValue, "2", "3", "4", "5", "6", "7");
         SetupTableRows(row);
 
         var result = await _scraper.ScrapeAsync(2025);
@@ -100,7 +96,7 @@ public class FantasyProsAccuracyScraperTests
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_ReturnsNullPositionRank_WhenDataSortIsSentinelValue()
     {
-        var row = CreateMockRow("1", "Test Expert - TestSite", "100000", "99999", "10000", "1", "2", "3", "4");
+        var row = CreateMockRow("1", "Golf Hotel - SiteDelta", "100000", "99999", "10000", "1", "2", "3", "4");
         SetupTableRows(row);
 
         var result = await _scraper.ScrapeAsync(2025);
@@ -114,35 +110,11 @@ public class FantasyProsAccuracyScraperTests
 
     [TestMethod]
     [TestCategory("ScrapeAsync")]
-    public async Task ScrapeAsync_GeneratesCorrectSlug_FromExpertName()
-    {
-        var row = CreateMockRow("1", "Joe D'Angelo - ESPN", "1", "2", "3", "4", "5", "6", "7");
-        SetupTableRows(row);
-
-        var result = await _scraper.ScrapeAsync(2025);
-
-        Assert.AreEqual("joe-dangelo", result[0].Slug);
-    }
-
-    [TestMethod]
-    [TestCategory("ScrapeAsync")]
-    public async Task ScrapeAsync_SlugHandlesMultipleSpacesAndPunctuation()
-    {
-        var row = CreateMockRow("1", "Dr. John St. Pierre Jr. - NFL Network", "1", "2", "3", "4", "5", "6", "7");
-        SetupTableRows(row);
-
-        var result = await _scraper.ScrapeAsync(2025);
-
-        Assert.AreEqual("dr-john-st-pierre-jr", result[0].Slug);
-    }
-
-    [TestMethod]
-    [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_ParsesMultipleExperts()
     {
-        var row1 = CreateMockRow("1", "Expert One - SiteA", "1", "2", "3", "4", "5", "6", "7");
-        var row2 = CreateMockRow("2", "Expert Two - SiteB", "8", "9", "10", "11", "12", "13", "14");
-        var row3 = CreateMockRow("3", "Expert Three - SiteC", "15", "-", "17", "-", "19", "20", "-");
+        var row1 = CreateMockRow("1", "Expert One - SiteOne", "1", "2", "3", "4", "5", "6", "7");
+        var row2 = CreateMockRow("2", "Expert Two - SiteTwo", "8", "9", "10", "11", "12", "13", "14");
+        var row3 = CreateMockRow("3", "Expert Three - SiteThree", "15", "-", "17", "-", "19", "20", "-");
         SetupTableRows(row1, row2, row3);
 
         var result = await _scraper.ScrapeAsync(2025);
@@ -174,54 +146,28 @@ public class FantasyProsAccuracyScraperTests
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_SkipsRows_WithInsufficientCells()
     {
-        var validRow = CreateMockRow("1", "Valid Expert - ValidSite", "1", "2", "3", "4", "5", "6", "7");
+        var validRow = CreateMockRow("1", "November Oscar - SiteGolf", "1", "2", "3", "4", "5", "6", "7");
         var shortRow = CreateMockRowWithCellCount(3);
         SetupTableRows(shortRow, validRow);
 
         var result = await _scraper.ScrapeAsync(2025);
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("Valid Expert", result[0].Name);
+        Assert.AreEqual("November Oscar", result[0].Name);
     }
 
     [TestMethod]
     [TestCategory("ScrapeAsync")]
     public async Task ScrapeAsync_SkipsRows_WithNoAnchorTag()
     {
-        var validRow = CreateMockRow("1", "Valid Expert - ValidSite", "1", "2", "3", "4", "5", "6", "7");
+        var validRow = CreateMockRow("1", "Papa Quebec - SiteHotel", "1", "2", "3", "4", "5", "6", "7");
         var noAnchorRow = CreateMockRowWithNoAnchor();
         SetupTableRows(noAnchorRow, validRow);
 
         var result = await _scraper.ScrapeAsync(2025);
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("Valid Expert", result[0].Name);
-    }
-
-    [TestMethod]
-    [TestCategory("ScrapeAsync")]
-    public async Task ScrapeAsync_SetsAccuracyYear_FromParameter()
-    {
-        var row = CreateMockRow("1", "Test Expert - TestSite", "1", "2", "3", "4", "5", "6", "7");
-        SetupTableRows(row);
-
-        var result2024 = await _scraper.ScrapeAsync(2024);
-
-        Assert.AreEqual(2024, result2024[0].AccuracyYear);
-    }
-
-    [TestMethod]
-    [TestCategory("ScrapeAsync")]
-    public async Task ScrapeAsync_HandlesNameWithoutSiteSeparator()
-    {
-        var row = CreateMockRow("1", "SoloExpert", "1", "2", "3", "4", "5", "6", "7");
-        SetupTableRows(row);
-
-        var result = await _scraper.ScrapeAsync(2025);
-
-        Assert.AreEqual("SoloExpert", result[0].Name);
-        Assert.AreEqual("", result[0].Site);
-        Assert.AreEqual("soloexpert", result[0].Slug);
+        Assert.AreEqual("Papa Quebec", result[0].Name);
     }
 
     [TestMethod]
@@ -258,27 +204,8 @@ public class FantasyProsAccuracyScraperTests
         await _scraper.ScrapeAsync(2025);
 
         _mockPage.Verify(p => p.GotoAsync(
-            "https://www.fantasypros.com/nfl/accuracy/draft.php?year=2025",
+            "https://fake-base.test/nfl/accuracy/draft.php?year=2025",
             It.IsAny<PageGotoOptions>()), Times.Once);
-    }
-
-    #endregion
-
-    #region GenerateSlug
-
-    [DataTestMethod]
-    [DataRow("Pat Fitzmaurice", "pat-fitzmaurice")]
-    [DataRow("Jake Ciely", "jake-ciely")]
-    [DataRow("Joe D'Angelo", "joe-dangelo")]
-    [DataRow("Dr. John St. Pierre Jr.", "dr-john-st-pierre-jr")]
-    [DataRow("Single", "single")]
-    [DataRow("ALL CAPS NAME", "all-caps-name")]
-    [TestCategory("GenerateSlug")]
-    public void GenerateSlug_ProducesExpectedSlug(string name, string expectedSlug)
-    {
-        var result = FantasyProsAccuracyScraper.GenerateSlug(name);
-
-        Assert.AreEqual(expectedSlug, result);
     }
 
     #endregion
