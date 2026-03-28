@@ -8,7 +8,7 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFantasyProsRankingsScraper
 {
     private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/rankings/{{0}}.php?position=ALL&type={{1}}&scoring={{2}}";
-    private const string RowSelector = "table tbody tr";
+    private const string RowSelector = "#ranking-data tbody tr";
     private const char NonBreakingSpace = '\u00A0';
 
     private static readonly Regex PositionRankRegex = new(@"^([A-Z]+)(\d+)$", RegexOptions.Compiled);
@@ -22,7 +22,15 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
         {
             var url = string.Format(_urlTemplate, slug, rankingType, scoringType);
             await page.GotoAsync(url);
-            await page.WaitForSelectorAsync(RowSelector);
+
+            try
+            {
+                await page.WaitForSelectorAsync(RowSelector);
+            }
+            catch (TimeoutException)
+            {
+                return [];
+            }
 
             var rows = await page.QuerySelectorAllAsync(RowSelector);
             var rankings = new List<ScrapedPlayerRanking>();
