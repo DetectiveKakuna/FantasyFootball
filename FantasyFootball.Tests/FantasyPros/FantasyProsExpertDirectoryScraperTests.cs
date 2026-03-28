@@ -10,7 +10,6 @@ public class FantasyProsExpertDirectoryScraperTests
 {
     private Mock<IBrowser> _mockBrowser = null!;
     private Mock<IPage> _mockPage = null!;
-    private Mock<IElementHandle> _mockTable = null!;
     private FantasyProsExpertDirectoryScraper _scraper = null!;
 
     [TestInitialize]
@@ -18,8 +17,6 @@ public class FantasyProsExpertDirectoryScraperTests
     {
         _mockBrowser = new Mock<IBrowser>();
         _mockPage = new Mock<IPage>();
-        _mockTable = new Mock<IElementHandle>();
-
         _mockBrowser
             .Setup(b => b.NewPageAsync(It.IsAny<BrowserNewPageOptions>()))
             .ReturnsAsync(_mockPage.Object);
@@ -31,10 +28,6 @@ public class FantasyProsExpertDirectoryScraperTests
         _mockPage
             .Setup(p => p.WaitForSelectorAsync(It.IsAny<string>(), It.IsAny<PageWaitForSelectorOptions>()))
             .ReturnsAsync((IElementHandle?)null);
-
-        _mockPage
-            .Setup(p => p.QuerySelectorAsync("#expert-data"))
-            .ReturnsAsync(_mockTable.Object);
 
         _mockPage
             .Setup(p => p.CloseAsync(It.IsAny<PageCloseOptions>()))
@@ -159,8 +152,8 @@ public class FantasyProsExpertDirectoryScraperTests
     public async Task ScrapeExpertsWithRankingsAsync_ReturnsEmptyList_WhenTableNotFound()
     {
         _mockPage
-            .Setup(p => p.QuerySelectorAsync("#expert-data"))
-            .ReturnsAsync((IElementHandle?)null);
+            .Setup(p => p.WaitForSelectorAsync(It.IsAny<string>(), It.IsAny<PageWaitForSelectorOptions>()))
+            .ThrowsAsync(new TimeoutException("Selector not found"));
 
         var result = await _scraper.ScrapeExpertsWithRankingsAsync("draft", "PPR");
 
@@ -307,8 +300,8 @@ public class FantasyProsExpertDirectoryScraperTests
 
     private void SetupTableRows(params Mock<IElementHandle>[] rows)
     {
-        _mockTable
-            .Setup(t => t.QuerySelectorAllAsync("tbody tr"))
+        _mockPage
+            .Setup(p => p.QuerySelectorAllAsync("#expert-data tbody tr"))
             .ReturnsAsync(rows.Select(r => r.Object).ToList<IElementHandle>().AsReadOnly());
     }
 

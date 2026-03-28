@@ -215,7 +215,7 @@ public class FantasyProsAccuracyScraperTests
     private void SetupTableRows(params Mock<IElementHandle>[] rows)
     {
         _mockPage
-            .Setup(p => p.QuerySelectorAllAsync("table tbody tr"))
+            .Setup(p => p.QuerySelectorAllAsync("#data tbody tr"))
             .ReturnsAsync(rows.Select(r => r.Object).ToList<IElementHandle>().AsReadOnly());
     }
 

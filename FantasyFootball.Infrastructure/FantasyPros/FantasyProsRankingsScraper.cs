@@ -7,22 +7,33 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 
 public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFantasyProsRankingsScraper
 {
-    private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/rankings/{{0}}.php?position=ALL&type={{1}}&scoring={{2}}";
-    private const string RowSelector = "table tbody tr";
+    private readonly string _baseUrl = baseUrl.TrimEnd('/');
+    private const string RowSelector = "#ranking-data tbody tr";
     private const char NonBreakingSpace = '\u00A0';
 
     private static readonly Regex PositionRankRegex = new(@"^([A-Z]+)(\d+)$", RegexOptions.Compiled);
+    private static readonly Regex FpIdRegex = new(@"fp-id-(\S+)", RegexOptions.Compiled);
 
     private readonly IBrowser _browser = browser;
 
     public async Task<List<ScrapedPlayerRanking>> ScrapeExpertRankingsAsync(string slug, string rankingType, string scoringType)
     {
         var page = await _browser.NewPageAsync();
+        page.SetDefaultTimeout(5000);
         try
         {
-            var url = string.Format(_urlTemplate, slug, rankingType, scoringType);
+            var url = $"{_baseUrl}/nfl/rankings/{Uri.EscapeDataString(slug)}.php" +
+                      $"?position=ALL&type={Uri.EscapeDataString(rankingType)}&scoring={Uri.EscapeDataString(scoringType)}";
             await page.GotoAsync(url);
-            await page.WaitForSelectorAsync(RowSelector);
+
+            try
+            {
+                await page.WaitForSelectorAsync(RowSelector);
+            }
+            catch (TimeoutException)
+            {
+                return [];
+            }
 
             var rows = await page.QuerySelectorAllAsync(RowSelector);
             var rankings = new List<ScrapedPlayerRanking>();
@@ -48,7 +59,7 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
 
                 if (fpIdClass.Contains("fp-id-"))
                 {
-                    var match = Regex.Match(fpIdClass, @"fp-id-(\S+)");
+                    var match = FpIdRegex.Match(fpIdClass);
                     if (match.Success)
                         fantasyProsPlayerId = match.Groups[1].Value;
                 }
@@ -70,10 +81,8 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
                     }
                 }
 
-                var teamText = (await cells[3].TextContentAsync())?.Trim();
-                string? nflTeam = string.IsNullOrWhiteSpace(teamText) || teamText.Contains(NonBreakingSpace) || teamText == "\u00a0"
-                    ? null
-                    : teamText;
+                var teamText = (await cells[3].TextContentAsync())?.Replace(NonBreakingSpace, ' ').Trim();
+                string? nflTeam = string.IsNullOrWhiteSpace(teamText) ? null : teamText;
 
                 var ecrText = (await cells[5].TextContentAsync())?.Trim();
                 int? ecrRank = int.TryParse(ecrText, out var ecr) ? ecr : null;

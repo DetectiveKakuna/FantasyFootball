@@ -75,7 +75,7 @@ public class SleeperClientTests
             new() { RosterId = 1, OwnerId = "test_user_001", LeagueId = "test_league_id", Players = ["test_player_1", "test_player_2"], Starters = ["test_player_1"] },
             new() { RosterId = 2, OwnerId = "test_user_002", LeagueId = "test_league_id", Players = ["test_player_3"], Starters = ["test_player_3"], Reserve = ["test_player_4"] }
         };
-        SetupResponse("rosters", expected);
+        SetupResponse("league/test_league_id/rosters", expected);
 
         var result = await _client.GetRostersAsync("test_league_id");
 
@@ -87,7 +87,7 @@ public class SleeperClientTests
     [TestCategory("GetRostersAsync")]
     public async Task GetRostersAsync_ReturnsEmptyList_WhenLeagueHasNoRosters()
     {
-        SetupResponse("rosters", new List<SleeperRoster>());
+        SetupResponse("league/test_league_id/rosters", new List<SleeperRoster>());
 
         var result = await _client.GetRostersAsync("test_league_id");
 
@@ -102,7 +102,7 @@ public class SleeperClientTests
     [TestCategory("GetRostersAsync")]
     public async Task GetRostersAsync_ThrowsHttpRequestException_OnHttpError(HttpStatusCode statusCode)
     {
-        SetupErrorResponse("rosters", statusCode);
+        SetupErrorResponse("league/invalid/rosters", statusCode);
 
         await Assert.ThrowsExactlyAsync<HttpRequestException>(() =>
             _client.GetRostersAsync("invalid"));
@@ -122,32 +122,12 @@ public class SleeperClientTests
             new() { UserId = "test_user_001", DisplayName = "TestCommish", LeagueId = "test_league_id", IsOwner = true },
             new() { UserId = "test_user_002", DisplayName = "TestUser", LeagueId = "test_league_id", IsOwner = false }
         };
-        SetupResponse("users", expected);
+        SetupResponse("league/test_league_id/users", expected);
 
         var result = await _client.GetUsersAsync("test_league_id");
 
         Assert.IsNotNull(result);
         AssertAreEqualByJson(expected, result);
-    }
-
-    [TestMethod]
-    [TestCategory("GetUsersAsync")]
-    [Timeout(5000)]
-    public async Task GetUsersAsync_IdentifiesLeagueOwnerCorrectly()
-    {
-        var expected = new List<SleeperUser>
-        {
-            new() { UserId = "111", DisplayName = "User1", LeagueId = "test_league_id", IsOwner = false },
-            new() { UserId = "222", DisplayName = "Owner", LeagueId = "test_league_id", IsOwner = true },
-            new() { UserId = "333", DisplayName = "User3", LeagueId = "test_league_id", IsOwner = false }
-        };
-        SetupResponse("users", expected);
-
-        var result = await _client.GetUsersAsync("test_league_id");
-
-        var owner = result!.Single(u => u.IsOwner);
-        Assert.AreEqual("222", owner.UserId);
-        Assert.AreEqual("Owner", owner.DisplayName);
     }
 
     [DataTestMethod]
@@ -157,7 +137,7 @@ public class SleeperClientTests
     [TestCategory("GetUsersAsync")]
     public async Task GetUsersAsync_ThrowsHttpRequestException_OnHttpError(HttpStatusCode statusCode)
     {
-        SetupErrorResponse("users", statusCode);
+        SetupErrorResponse("league/invalid/users", statusCode);
 
         await Assert.ThrowsExactlyAsync<HttpRequestException>(() =>
             _client.GetUsersAsync("invalid"));
@@ -183,7 +163,7 @@ public class SleeperClientTests
                 Settings = new SleeperDraftSettings { Rounds = 16, Teams = 12, PickTimer = 90 }
             }
         };
-        SetupResponse("drafts", expected);
+        SetupResponse("league/test_league_id/drafts", expected);
 
         var result = await _client.GetDraftsAsync("test_league_id");
 
@@ -195,7 +175,7 @@ public class SleeperClientTests
     [TestCategory("GetDraftsAsync")]
     public async Task GetDraftsAsync_ReturnsEmptyList_WhenNoDraftsExist()
     {
-        SetupResponse("drafts", new List<SleeperDraft>());
+        SetupResponse("league/test_league_id/drafts", new List<SleeperDraft>());
 
         var result = await _client.GetDraftsAsync("test_league_id");
 
@@ -210,7 +190,7 @@ public class SleeperClientTests
     [TestCategory("GetDraftsAsync")]
     public async Task GetDraftsAsync_ThrowsHttpRequestException_OnHttpError(HttpStatusCode statusCode)
     {
-        SetupErrorResponse("drafts", statusCode);
+        SetupErrorResponse("league/invalid/drafts", statusCode);
 
         await Assert.ThrowsExactlyAsync<HttpRequestException>(() =>
             _client.GetDraftsAsync("invalid"));
@@ -289,13 +269,15 @@ public class SleeperClientTests
             JsonSerializer.Serialize(actual, options));
     }
 
-    private void SetupResponse<T>(string url, T responseObject, HttpStatusCode statusCode = HttpStatusCode.OK)
+    private void SetupResponse<T>(string path, T responseObject, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
         _handlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.ToString().Contains(url)),
+                ItExpr.Is<HttpRequestMessage>(r =>
+                    r.Method == HttpMethod.Get &&
+                    r.RequestUri!.AbsolutePath == $"/{path}"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
@@ -304,13 +286,15 @@ public class SleeperClientTests
             });
     }
 
-    private void SetupErrorResponse(string url, HttpStatusCode statusCode)
+    private void SetupErrorResponse(string path, HttpStatusCode statusCode)
     {
         _handlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.ToString().Contains(url)),
+                ItExpr.Is<HttpRequestMessage>(r =>
+                    r.Method == HttpMethod.Get &&
+                    r.RequestUri!.AbsolutePath == $"/{path}"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {

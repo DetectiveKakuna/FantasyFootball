@@ -8,9 +8,8 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 
 public class FantasyProsExpertDirectoryScraper(IBrowser browser, string baseUrl) : IFantasyProsExpertDirectoryScraper
 {
-    private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/rankings/?type={{0}}&scoring={{1}}";
-    private const string TableSelector = "#expert-data";
-    private const string RowSelector = "tbody tr";
+    private readonly string _baseUrl = baseUrl.TrimEnd('/');
+    private const string RowSelector = "#expert-data tbody tr";
 
     private static readonly Regex SlugRegex = new(@"/nfl/rankings/([^/]+)\.php", RegexOptions.Compiled);
 
@@ -19,17 +18,22 @@ public class FantasyProsExpertDirectoryScraper(IBrowser browser, string baseUrl)
     public async Task<List<ScrapedExpertDirectory>> ScrapeExpertsWithRankingsAsync(string rankingType, string scoringType)
     {
         var page = await _browser.NewPageAsync();
+        page.SetDefaultTimeout(5000);
         try
         {
-            var url = string.Format(_urlTemplate, rankingType, scoringType);
+            var url = $"{_baseUrl}/nfl/rankings/?type={Uri.EscapeDataString(rankingType)}&scoring={Uri.EscapeDataString(scoringType)}";
             await page.GotoAsync(url);
-            await page.WaitForSelectorAsync(TableSelector);
 
-            var table = await page.QuerySelectorAsync(TableSelector);
-            if (table is null)
+            try
+            {
+                await page.WaitForSelectorAsync(RowSelector);
+            }
+            catch (TimeoutException)
+            {
                 return [];
+            }
 
-            var rows = await table.QuerySelectorAllAsync(RowSelector);
+            var rows = await page.QuerySelectorAllAsync(RowSelector);
             var experts = new List<ScrapedExpertDirectory>();
 
             foreach (var row in rows)

@@ -19,7 +19,9 @@ public class NamingArchitectureTests
 
     private static bool ReturnsTask(MethodInfo m) =>
         m.ReturnType == typeof(Task) ||
-        (m.ReturnType.IsGenericType && m.ReturnType.GetGenericTypeDefinition() == typeof(Task<>));
+        m.ReturnType == typeof(ValueTask) ||
+        (m.ReturnType.IsGenericType && (m.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) ||
+                                        m.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>)));
 
     [TestMethod]
     public void AsyncMethods_MustEndWithAsync()
