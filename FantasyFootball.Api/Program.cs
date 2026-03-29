@@ -1,13 +1,18 @@
 using FantasyFootball.Core.Interfaces;
 using FantasyFootball.Infrastructure.Extensions;
 using FantasyFootball.Infrastructure.FantasyPros;
+using FantasyFootball.Infrastructure.Persistence;
 using FantasyFootball.Infrastructure.Sleeper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var fantasyProsBaseUrl = builder.Configuration.GetRequiredBaseUrl("FantasyPros:BaseUrl").ToString();
 var sleeperBaseUri = builder.Configuration.GetRequiredBaseUrl("Sleeper:BaseUrl");
+
+builder.Services.AddDbContext<FantasyFootballDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOpenApi();
 
