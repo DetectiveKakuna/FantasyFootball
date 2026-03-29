@@ -50,7 +50,7 @@ public class TestCoverageArchitectureTests
 
                 Assert.IsTrue(hasTest,
                     $"No test found for {type.Name}.{method.Name} — " +
-                    $"add a test method whose name contains '{method.Name}'.");
+                    $"add a test method named '{method.Name}' or starting with '{method.Name}_'.");
             }
         }
     }
