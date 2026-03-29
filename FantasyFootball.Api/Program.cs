@@ -5,13 +5,16 @@ using Microsoft.Playwright;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var fantasyProsBaseUrl = builder.Configuration["FantasyPros:BaseUrl"]!;
+var fantasyProsBaseUrl = builder.Configuration["FantasyPros:BaseUrl"]
+    ?? throw new InvalidOperationException("Configuration key 'FantasyPros:BaseUrl' is missing.");
+var sleeperBaseUrl = builder.Configuration["Sleeper:BaseUrl"]
+    ?? throw new InvalidOperationException("Configuration key 'Sleeper:BaseUrl' is missing.");
 
 builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient<ISleeperClient, SleeperClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Sleeper:BaseUrl"]!);
+    client.BaseAddress = new Uri(sleeperBaseUrl);
 });
 
 builder.Services.AddSingleton<PlaywrightHostedService>();
