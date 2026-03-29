@@ -7,11 +7,12 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 
 public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFantasyProsRankingsScraper
 {
-    private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/rankings/{{0}}.php?position=ALL&type={{1}}&scoring={{2}}";
+    private readonly string _baseUrl = baseUrl.TrimEnd('/');
     private const string RowSelector = "#ranking-data tbody tr";
     private const char NonBreakingSpace = '\u00A0';
 
     private static readonly Regex PositionRankRegex = new(@"^([A-Z]+)(\d+)$", RegexOptions.Compiled);
+    private static readonly Regex FpIdRegex = new(@"fp-id-(\S+)", RegexOptions.Compiled);
 
     private readonly IBrowser _browser = browser;
 
@@ -20,7 +21,8 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
         var page = await _browser.NewPageAsync();
         try
         {
-            var url = string.Format(_urlTemplate, slug, rankingType, scoringType);
+            var url = $"{_baseUrl}/nfl/rankings/{Uri.EscapeDataString(slug)}.php" +
+                      $"?position=ALL&type={Uri.EscapeDataString(rankingType)}&scoring={Uri.EscapeDataString(scoringType)}";
             await page.GotoAsync(url);
 
             try
@@ -56,7 +58,7 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
 
                 if (fpIdClass.Contains("fp-id-"))
                 {
-                    var match = Regex.Match(fpIdClass, @"fp-id-(\S+)");
+                    var match = FpIdRegex.Match(fpIdClass);
                     if (match.Success)
                         fantasyProsPlayerId = match.Groups[1].Value;
                 }

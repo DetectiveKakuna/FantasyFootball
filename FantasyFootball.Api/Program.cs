@@ -1,20 +1,19 @@
 using FantasyFootball.Core.Interfaces;
+using FantasyFootball.Infrastructure.Extensions;
 using FantasyFootball.Infrastructure.FantasyPros;
 using FantasyFootball.Infrastructure.Sleeper;
 using Microsoft.Playwright;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var fantasyProsBaseUrl = builder.Configuration["FantasyPros:BaseUrl"]
-    ?? throw new InvalidOperationException("Configuration key 'FantasyPros:BaseUrl' is missing.");
-var sleeperBaseUrl = builder.Configuration["Sleeper:BaseUrl"]
-    ?? throw new InvalidOperationException("Configuration key 'Sleeper:BaseUrl' is missing.");
+var fantasyProsBaseUrl = builder.Configuration.GetRequiredBaseUrl("FantasyPros:BaseUrl").ToString();
+var sleeperBaseUri = builder.Configuration.GetRequiredBaseUrl("Sleeper:BaseUrl");
 
 builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient<ISleeperClient, SleeperClient>(client =>
 {
-    client.BaseAddress = new Uri(sleeperBaseUrl);
+    client.BaseAddress = sleeperBaseUri;
 });
 
 builder.Services.AddSingleton<PlaywrightHostedService>();

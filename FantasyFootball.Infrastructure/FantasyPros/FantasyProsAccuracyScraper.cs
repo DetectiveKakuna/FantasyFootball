@@ -6,7 +6,7 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 
 public class FantasyProsAccuracyScraper(IBrowser browser, string baseUrl) : IFantasyProsAccuracyScraper
 {
-    private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/accuracy/draft.php?year={{0}}";
+    private readonly string _baseUrl = baseUrl.TrimEnd('/');
     private const string RowSelector = "#data tbody tr";
 
     private readonly IBrowser _browser = browser;
@@ -16,7 +16,7 @@ public class FantasyProsAccuracyScraper(IBrowser browser, string baseUrl) : IFan
         var page = await _browser.NewPageAsync();
         try
         {
-            await page.GotoAsync(string.Format(_urlTemplate, year));
+            await page.GotoAsync($"{_baseUrl}/nfl/accuracy/draft.php?year={year}");
 
             try
             {

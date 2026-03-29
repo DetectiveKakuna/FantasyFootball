@@ -8,7 +8,7 @@ namespace FantasyFootball.Infrastructure.FantasyPros;
 
 public class FantasyProsExpertDirectoryScraper(IBrowser browser, string baseUrl) : IFantasyProsExpertDirectoryScraper
 {
-    private readonly string _urlTemplate = $"{baseUrl.TrimEnd('/')}/nfl/rankings/?type={{0}}&scoring={{1}}";
+    private readonly string _baseUrl = baseUrl.TrimEnd('/');
     private const string RowSelector = "#expert-data tbody tr";
 
     private static readonly Regex SlugRegex = new(@"/nfl/rankings/([^/]+)\.php", RegexOptions.Compiled);
@@ -20,7 +20,7 @@ public class FantasyProsExpertDirectoryScraper(IBrowser browser, string baseUrl)
         var page = await _browser.NewPageAsync();
         try
         {
-            var url = string.Format(_urlTemplate, rankingType, scoringType);
+            var url = $"{_baseUrl}/nfl/rankings/?type={Uri.EscapeDataString(rankingType)}&scoring={Uri.EscapeDataString(scoringType)}";
             await page.GotoAsync(url);
 
             try
