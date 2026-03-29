@@ -81,10 +81,8 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
                     }
                 }
 
-                var teamText = (await cells[3].TextContentAsync())?.Trim();
-                string? nflTeam = string.IsNullOrWhiteSpace(teamText) || teamText.Contains(NonBreakingSpace) || teamText == "\u00a0"
-                    ? null
-                    : teamText;
+                var teamText = (await cells[3].TextContentAsync())?.Replace(NonBreakingSpace, ' ').Trim();
+                string? nflTeam = string.IsNullOrWhiteSpace(teamText) ? null : teamText;
 
                 var ecrText = (await cells[5].TextContentAsync())?.Trim();
                 int? ecrRank = int.TryParse(ecrText, out var ecr) ? ecr : null;
