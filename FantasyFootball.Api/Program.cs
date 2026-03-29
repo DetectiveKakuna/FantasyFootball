@@ -1,12 +1,35 @@
+using FantasyFootball.Core.Interfaces;
+using FantasyFootball.Infrastructure.Extensions;
+using FantasyFootball.Infrastructure.FantasyPros;
+using FantasyFootball.Infrastructure.Sleeper;
+using Microsoft.Playwright;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+var fantasyProsBaseUrl = builder.Configuration.GetRequiredBaseUrl("FantasyPros:BaseUrl").ToString();
+var sleeperBaseUri = builder.Configuration.GetRequiredBaseUrl("Sleeper:BaseUrl");
+
 builder.Services.AddOpenApi();
+
+builder.Services.AddHttpClient<ISleeperClient, SleeperClient>(client =>
+{
+    client.BaseAddress = sleeperBaseUri;
+});
+
+builder.Services.AddSingleton<PlaywrightHostedService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightHostedService>());
+builder.Services.AddSingleton<IPlaywright>(sp => sp.GetRequiredService<PlaywrightHostedService>().Playwright);
+builder.Services.AddSingleton<IBrowser>(sp => sp.GetRequiredService<PlaywrightHostedService>().Browser);
+
+builder.Services.AddSingleton<IFantasyProsAccuracyScraper>(sp =>
+    new FantasyProsAccuracyScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
+builder.Services.AddSingleton<IFantasyProsExpertDirectoryScraper>(sp =>
+    new FantasyProsExpertDirectoryScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
+builder.Services.AddSingleton<IFantasyProsRankingsScraper>(sp =>
+    new FantasyProsRankingsScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -14,28 +37,4 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
