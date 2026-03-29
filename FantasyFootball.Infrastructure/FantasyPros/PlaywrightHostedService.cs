@@ -13,17 +13,22 @@ public class PlaywrightHostedService : IHostedService, IAsyncDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+
+        cancellationToken.ThrowIfCancellationRequested();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await DisposeAsync();
+        if (!cancellationToken.IsCancellationRequested)
+            await DisposeAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
+        GC.SuppressFinalize(this);
         if (_browser is not null)
         {
             await _browser.CloseAsync();
