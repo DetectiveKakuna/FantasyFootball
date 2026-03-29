@@ -18,6 +18,7 @@ public class FantasyProsExpertDirectoryScraper(IBrowser browser, string baseUrl)
     public async Task<List<ScrapedExpertDirectory>> ScrapeExpertsWithRankingsAsync(string rankingType, string scoringType)
     {
         var page = await _browser.NewPageAsync();
+        page.SetDefaultTimeout(5000);
         try
         {
             var url = $"{_baseUrl}/nfl/rankings/?type={Uri.EscapeDataString(rankingType)}&scoring={Uri.EscapeDataString(scoringType)}";

@@ -10,6 +10,8 @@ public static class ConfigurationExtensions
         if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException($"Configuration key '{key}' is missing or empty.");
 
+        value = value.Trim();
+
         if (!value.EndsWith('/'))
             value += "/";
 

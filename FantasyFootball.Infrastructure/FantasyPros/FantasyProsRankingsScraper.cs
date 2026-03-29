@@ -19,6 +19,7 @@ public class FantasyProsRankingsScraper(IBrowser browser, string baseUrl) : IFan
     public async Task<List<ScrapedPlayerRanking>> ScrapeExpertRankingsAsync(string slug, string rankingType, string scoringType)
     {
         var page = await _browser.NewPageAsync();
+        page.SetDefaultTimeout(5000);
         try
         {
             var url = $"{_baseUrl}/nfl/rankings/{Uri.EscapeDataString(slug)}.php" +

@@ -14,6 +14,7 @@ public class FantasyProsAccuracyScraper(IBrowser browser, string baseUrl) : IFan
     public async Task<List<ScrapedExpertAccuracy>> ScrapeAsync(int year)
     {
         var page = await _browser.NewPageAsync();
+        page.SetDefaultTimeout(5000);
         try
         {
             await page.GotoAsync($"{_baseUrl}/nfl/accuracy/draft.php?year={year}");
