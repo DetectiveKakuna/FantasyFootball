@@ -14,12 +14,10 @@ builder.Services.AddHttpClient<ISleeperClient, SleeperClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Sleeper:BaseUrl"]!);
 });
 
-builder.Services.AddSingleton<IPlaywright>(_ =>
-    Playwright.CreateAsync().GetAwaiter().GetResult());
-builder.Services.AddSingleton<IBrowser>(sp =>
-    sp.GetRequiredService<IPlaywright>().Chromium
-        .LaunchAsync(new BrowserTypeLaunchOptions { Headless = true })
-        .GetAwaiter().GetResult());
+builder.Services.AddSingleton<PlaywrightHostedService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightHostedService>());
+builder.Services.AddSingleton<IPlaywright>(sp => sp.GetRequiredService<PlaywrightHostedService>().Playwright);
+builder.Services.AddSingleton<IBrowser>(sp => sp.GetRequiredService<PlaywrightHostedService>().Browser);
 
 builder.Services.AddSingleton<IFantasyProsAccuracyScraper>(sp =>
     new FantasyProsAccuracyScraper(sp.GetRequiredService<IBrowser>(), fantasyProsBaseUrl));
