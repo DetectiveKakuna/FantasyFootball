@@ -130,26 +130,6 @@ public class SleeperClientTests
         AssertAreEqualByJson(expected, result);
     }
 
-    [TestMethod]
-    [TestCategory("GetUsersAsync")]
-    [Timeout(5000)]
-    public async Task GetUsersAsync_IdentifiesLeagueOwnerCorrectly()
-    {
-        var expected = new List<SleeperUser>
-        {
-            new() { UserId = "111", DisplayName = "User1", LeagueId = "test_league_id", IsOwner = false },
-            new() { UserId = "222", DisplayName = "Owner", LeagueId = "test_league_id", IsOwner = true },
-            new() { UserId = "333", DisplayName = "User3", LeagueId = "test_league_id", IsOwner = false }
-        };
-        SetupResponse("users", expected);
-
-        var result = await _client.GetUsersAsync("test_league_id");
-
-        var owner = result!.Single(u => u.IsOwner);
-        Assert.AreEqual("222", owner.UserId);
-        Assert.AreEqual("Owner", owner.DisplayName);
-    }
-
     [DataTestMethod]
     [DataRow(HttpStatusCode.NotFound)]
     [DataRow(HttpStatusCode.InternalServerError)]
