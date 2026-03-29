@@ -22,8 +22,7 @@ public class PlaywrightHostedService : IHostedService, IAsyncDisposable
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (!cancellationToken.IsCancellationRequested)
-            await DisposeAsync();
+        await DisposeAsync();
     }
 
     public async ValueTask DisposeAsync()
